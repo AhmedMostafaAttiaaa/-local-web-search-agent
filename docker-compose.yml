@@ -1,0 +1,39 @@
+# SearxNG metasearch engine — the primary (free, self-hosted) search backend.
+#
+# Start it with:   docker compose up -d
+# Stop it with:    docker compose down
+#
+# The JSON API that this agent depends on is DISABLED in SearxNG by default.
+# We enable it by mounting ./searxng/settings.yml (see that file) which sets
+# `search.formats: [html, json]` and disables the bot limiter for local use.
+services:
+  searxng:
+    image: searxng/searxng:latest
+    container_name: searxng
+    ports:
+      - "8080:8080"
+    volumes:
+      # Mounts our custom settings so the JSON format is enabled out of the box.
+      # Also makes trust_interception_ca.py available at /etc/searxng/.
+      - ./searxng:/etc/searxng:rw
+    environment:
+      # Base URL SearxNG advertises for itself.
+      - SEARXNG_BASE_URL=http://localhost:8080/
+    # On startup, trust any local TLS-intercepting root (e.g. Kaspersky) so the
+    # search engines are reachable, then hand off to SearxNG's real entrypoint.
+    # Harmless on machines without interception (the script is a no-op there).
+    entrypoint:
+      - /bin/sh
+      - -c
+      - "/usr/local/searxng/.venv/bin/python /etc/searxng/trust_interception_ca.py || true; exec /usr/local/searxng/entrypoint.sh"
+    restart: unless-stopped
+    # Small hardening tweaks recommended by the SearxNG image docs.
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "1m"
+        max-file: "1"

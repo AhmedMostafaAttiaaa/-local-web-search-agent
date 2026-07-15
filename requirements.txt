@@ -1,0 +1,8 @@
+# Core agent + tooling dependencies
+ollama>=0.4.0          # Official Ollama Python client (native tool-calling support)
+requests>=2.31.0       # HTTP for SearxNG JSON API, DuckDuckGo scrape, page fetch
+beautifulsoup4>=4.12.0 # HTML parsing for the DDG fallback and page cleaning
+python-dotenv>=1.0.0   # Reads OLLAMA_HOST etc. from a .env file
+pyyaml>=6.0            # Loads config.yaml
+rich>=13.0.0           # Nicer CLI output (optional at runtime, code degrades gracefully)
+truststore>=0.9.0      # Verify TLS via the OS trust store (fixes corporate/AV MITM, e.g. Kaspersky)

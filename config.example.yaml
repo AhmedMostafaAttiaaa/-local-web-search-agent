@@ -1,0 +1,31 @@
+# Example configuration. Copy this file to `config.yaml` and edit as needed:
+#
+#     cp config.example.yaml config.yaml
+#
+# Precedence (highest wins):
+#   1. Environment variables (including those in a .env file)
+#   2. Values in config.yaml
+#   3. Built-in defaults
+#
+# Env var overrides:
+#   OLLAMA_HOST   -> ollama_host
+#   OLLAMA_MODEL  -> model
+#   SEARXNG_HOST  -> searxng_host
+
+ollama_host: "http://localhost:11434"    # Ollama server URL
+model: "llama3.1"                         # A tool-calling-capable model you've pulled
+searxng_host: "http://localhost:8080"     # SearxNG instance URL
+num_results: 5                            # Number of search results to fetch per query
+auto_fetch_pages: false                   # If true, auto-fetch the top result's page after each search
+max_page_chars: 3000                      # Max characters returned by fetch_page (and auto-fetch)
+
+# --- TLS / corporate proxy / antivirus interception ------------------------
+# Behind a TLS-intercepting proxy or AV (e.g. Kaspersky), outbound HTTPS may fail
+# with "CERTIFICATE_VERIFY_FAILED". Fixes, in order of preference:
+#   1. use_os_truststore: true -> verify via the OS trust store (trusts whatever
+#      the OS trusts, incl. corporate/AV roots). Secure and usually "just works".
+#   2. ca_bundle: "C:/path/to/root-ca.pem" -> trust a specific CA (secure).
+#   3. verify_ssl: false -> disable verification entirely (insecure, last resort).
+verify_ssl: true                          # Verify TLS certificates for web requests
+ca_bundle: ""                             # Optional path to a CA bundle (.pem/.crt)
+use_os_truststore: true                   # Verify via OS trust store (needs `truststore`)

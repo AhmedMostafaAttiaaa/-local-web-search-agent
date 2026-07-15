@@ -1,0 +1,20 @@
+.env
+config.yaml
+__pycache__/
+*.pyc
+.pytest_cache/
+models.md
+
+# Virtual environment
+.venv/
+venv/
+
+# Personal notes / cheatsheets (not for the repo)
+COMMANDS.md
+EXPLANATION.md
+explanition.md
+USAGE.txt
+
+# Local CA bundles / certs (corporate proxy)
+*.pem
+*.crt
