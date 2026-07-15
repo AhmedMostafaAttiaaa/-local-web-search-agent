@@ -3,11 +3,11 @@
 A **100% free, local** tool-calling agent that lets any tool-capable Ollama
 model **search the live internet** instead of relying only on its training data.
 
-- 🔍 **Primary search backend:** [SearxNG](https://github.com/searxng/searxng) (self-hosted, open-source metasearch) via Docker — **no API keys**.
-- 🦆 **Fallback:** DuckDuckGo HTML scrape (no API key) if SearxNG is unreachable.
-- 📄 **Page-fetch tool:** downloads a URL and extracts clean readable text so the model can read exact details (like a price) beyond the snippet.
-- 🤖 **Native Ollama tool-calling:** the model itself decides when to call `web_search` and/or `fetch_page`, across multiple turns.
-- 🖥️ **CLI + interactive chat** modes, configurable via `config.yaml` / `.env`.
+-  **Primary search backend:** [SearxNG](https://github.com/searxng/searxng) (self-hosted, open-source metasearch) via Docker — **no API keys**.
+-  **Fallback:** DuckDuckGo HTML scrape (no API key) if SearxNG is unreachable.
+-  **Page-fetch tool:** downloads a URL and extracts clean readable text so the model can read exact details (like a price) beyond the snippet.
+-  **Native Ollama tool-calling:** the model itself decides when to call `web_search` and/or `fetch_page`, across multiple turns.
+-  **CLI + interactive chat** modes, configurable via `config.yaml` / `.env`.
 
 ```
 ollama-search-agent/
