@@ -129,6 +129,25 @@ python search_agent.py --model qwen2.5 "latest news about the mars rover"
 python search_agent.py --no-search "explain the quicksort algorithm"
 ```
 
+### Using Groq instead of Ollama (cloud, no local model needed)
+
+The agent also supports [Groq](https://console.groq.com) — a fast, OpenAI-compatible
+API with free open models (Llama, Qwen, gpt-oss) that support tool-calling.
+
+1. Get a free key at https://console.groq.com/keys and add it to `.env`:
+   ```bash
+   GROQ_API_KEY=gsk_...
+   ```
+2. Run with the Groq backend:
+   ```bash
+   python search_agent.py --backend groq "usd to egp rate today"
+   python search_agent.py --backend groq --model openai/gpt-oss-20b "latest F1 winner"
+   ```
+
+Or set it permanently in `config.yaml`: `backend: "groq"`. Everything else (web
+search, sources, TLS handling) works identically. Good tool-capable Groq models:
+`llama-3.3-70b-versatile`, `openai/gpt-oss-20b`, `qwen/qwen3-32b`.
+
 ### Sample output (abridged)
 
 ```

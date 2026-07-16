@@ -179,6 +179,9 @@ def main(argv: list[str] | None = None) -> int:
         help="Disable web tools and just chat normally (for comparison/testing).",
     )
     parser.add_argument(
+        "--backend", choices=["ollama", "groq"], help="LLM backend (overrides config)."
+    )
+    parser.add_argument(
         "--config", default="config.yaml", help="Path to the config file (default: config.yaml)."
     )
     args = parser.parse_args(argv)
@@ -187,7 +190,11 @@ def main(argv: list[str] | None = None) -> int:
     _configure_logging()
 
     config = load_config(args.config)
-    model = args.model or config.model
+    if args.backend:
+        config.backend = args.backend
+    # Pick the right default model for the active backend.
+    default_model = config.groq_model if config.backend == "groq" else config.model
+    model = args.model or default_model
     use_tools = not args.no_search
 
     if not args.chat and not args.query:
@@ -208,6 +215,9 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     except Exception as exc:  # noqa: BLE001 - final safety net for a clean CLI message
         name = type(exc).__name__
+        if config.backend == "groq":
+            _print_error(f"Groq error: {exc}")
+            return 1
         if "Connect" in name or "Connection" in name or "Timeout" in name:
             _print_error(
                 f"Could not reach the Ollama host at {config.ollama_host}. "

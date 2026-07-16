@@ -33,8 +33,16 @@ except ImportError:  # pragma: no cover - python-dotenv is optional
 
 # Built-in defaults used when a value is absent from both config.yaml and env.
 DEFAULTS: dict[str, Any] = {
+    # Which LLM backend to use: "ollama" (local) or "groq" (cloud API).
+    "backend": "ollama",
     "ollama_host": "http://localhost:11434",
     "model": "llama3.1",
+    # Groq (OpenAI-compatible API). Needs an API key from https://console.groq.com
+    "groq_model": "llama-3.3-70b-versatile",
+    "groq_base_url": "https://api.groq.com/openai/v1",
+    "groq_api_key": "",
+    # Optional: override the built-in system prompt (empty -> use the default).
+    "system_prompt": "",
     "searxng_host": "http://localhost:8080",
     "num_results": 5,
     "auto_fetch_pages": False,
@@ -52,8 +60,11 @@ DEFAULTS: dict[str, Any] = {
 
 # Config field -> environment variable that overrides it.
 ENV_MAP: dict[str, str] = {
+    "backend": "AGENT_BACKEND",
     "ollama_host": "OLLAMA_HOST",
     "model": "OLLAMA_MODEL",
+    "groq_model": "GROQ_MODEL",
+    "groq_api_key": "GROQ_API_KEY",
     "searxng_host": "SEARXNG_HOST",
     "ca_bundle": "REQUESTS_CA_BUNDLE",  # standard var `requests` also honours
 }
@@ -63,8 +74,13 @@ ENV_MAP: dict[str, str] = {
 class Config:
     """Resolved runtime configuration for the agent."""
 
+    backend: str
     ollama_host: str
     model: str
+    groq_model: str
+    groq_base_url: str
+    groq_api_key: str
+    system_prompt: str
     searxng_host: str
     num_results: int
     auto_fetch_pages: bool
@@ -126,6 +142,9 @@ def load_config(path: str | os.PathLike[str] = "config.yaml") -> Config:
     data["verify_ssl"] = _as_bool(data["verify_ssl"])
     data["ca_bundle"] = str(data["ca_bundle"] or "")
     data["use_os_truststore"] = _as_bool(data["use_os_truststore"])
+    data["backend"] = str(data["backend"] or "ollama").strip().lower()
+    data["groq_api_key"] = str(data["groq_api_key"] or "")
+    data["system_prompt"] = str(data["system_prompt"] or "")
 
     return Config(**data)  # type: ignore[arg-type]
 

@@ -11,7 +11,7 @@ from __future__ import annotations
 import streamlit as st
 
 from agent.config import enable_os_truststore, load_config
-from agent.ollama_client import list_models, run_agent
+from agent.ollama_client import list_groq_models, list_models, run_agent
 
 
 @st.cache_resource
@@ -44,18 +44,32 @@ st.caption("Ask anything — the model searches the live web (Ollama + SearxNG /
 with st.sidebar:
     st.header("Settings")
 
-    models = list_models(cfg.ollama_host)
-    if models:
-        default_index = models.index(cfg.model) if cfg.model in models else 0
-        model = st.selectbox("Model", models, index=default_index)
-    else:
-        st.warning(f"Couldn't reach Ollama at {cfg.ollama_host}.")
-        model = st.text_input("Model", value=cfg.model)
+    backend = st.radio("Backend", ["ollama", "groq"], index=0 if cfg.backend != "groq" else 1)
+    cfg.backend = backend  # applied per run
+
+    if backend == "ollama":
+        models = list_models(cfg.ollama_host)
+        if models:
+            idx = models.index(cfg.model) if cfg.model in models else 0
+            model = st.selectbox("Model", models, index=idx)
+        else:
+            st.warning(f"Couldn't reach Ollama at {cfg.ollama_host}.")
+            model = st.text_input("Model", value=cfg.model)
+        st.caption(f"**Ollama:** {cfg.ollama_host}")
+    else:  # groq
+        if not cfg.groq_api_key:
+            st.warning("No GROQ_API_KEY set — add it to `.env` or `config.yaml`.")
+        gmodels = list_groq_models(cfg)
+        if gmodels:
+            idx = gmodels.index(cfg.groq_model) if cfg.groq_model in gmodels else 0
+            model = st.selectbox("Model", gmodels, index=idx)
+        else:
+            model = st.text_input("Model", value=cfg.groq_model)
+        st.caption("**Groq API** (api.groq.com)")
 
     use_tools = st.checkbox("Enable web search", value=True)
 
     st.divider()
-    st.caption(f"**Ollama:** {cfg.ollama_host}")
     st.caption(f"**SearxNG:** {cfg.searxng_host}")
 
 # --- Main: ask a question ----------------------------------------------------

@@ -7,3 +7,4 @@ pyyaml>=6.0            # Loads config.yaml
 rich>=13.0.0           # Nicer CLI output (optional at runtime, code degrades gracefully)
 truststore>=0.9.0      # Verify TLS via the OS trust store (fixes corporate/AV MITM, e.g. Kaspersky)
 streamlit>=1.30        # Optional: the basic web UI (streamlit run streamlit_app.py)
+openai>=1.30           # Groq backend (OpenAI-compatible API) — only needed for backend: groq

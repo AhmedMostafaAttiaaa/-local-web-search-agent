@@ -8,12 +8,26 @@
 #   3. Built-in defaults
 #
 # Env var overrides:
-#   OLLAMA_HOST   -> ollama_host
-#   OLLAMA_MODEL  -> model
-#   SEARXNG_HOST  -> searxng_host
+#   AGENT_BACKEND -> backend        GROQ_API_KEY -> groq_api_key
+#   OLLAMA_HOST   -> ollama_host    GROQ_MODEL   -> groq_model
+#   OLLAMA_MODEL  -> model          SEARXNG_HOST -> searxng_host
 
+# --- LLM backend -----------------------------------------------------------
+backend: "ollama"                         # "ollama" (local) or "groq" (cloud API)
+
+# Ollama (local) settings:
 ollama_host: "http://localhost:11434"    # Ollama server URL
 model: "llama3.1"                         # A tool-calling-capable model you've pulled
+
+# Groq (OpenAI-compatible cloud API) settings — only used when backend: groq.
+# Get a free key at https://console.groq.com/keys and put it in .env as GROQ_API_KEY.
+groq_model: "llama-3.3-70b-versatile"     # e.g. llama-3.3-70b-versatile, openai/gpt-oss-20b, qwen/qwen3-32b
+groq_base_url: "https://api.groq.com/openai/v1"
+groq_api_key: ""                          # better to set GROQ_API_KEY in .env instead
+
+# Optional: override the built-in system prompt (empty -> use the default).
+system_prompt: ""
+
 searxng_host: "http://localhost:8080"     # SearxNG instance URL
 num_results: 5                            # Number of search results to fetch per query
 auto_fetch_pages: false                   # If true, auto-fetch the top result's page after each search

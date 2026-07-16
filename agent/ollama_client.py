@@ -290,6 +290,18 @@ def run_agent(
         the full updated conversation (pass it back as ``history`` next turn).
     """
     config = config or load_config()
+
+    # Dispatch to the Groq (OpenAI-compatible) backend if selected.
+    if config.backend == "groq":
+        return _run_agent_groq(
+            user_query,
+            model=model,
+            history=history,
+            config=config,
+            max_iterations=max_iterations,
+            use_tools=use_tools,
+        )
+
     model = model or config.model
 
     # Verify HTTPS via the OS trust store so corporate/AV MITM roots (Kaspersky)
@@ -317,7 +329,7 @@ def run_agent(
 
     messages: list[dict[str, Any]] = list(history) if history else []
     if not messages or messages[0].get("role") != "system":
-        messages.insert(0, {"role": "system", "content": SYSTEM_PROMPT})
+        messages.insert(0, {"role": "system", "content": config.system_prompt or SYSTEM_PROMPT})
     messages.append({"role": "user", "content": user_query})
 
     sources: list[dict[str, str]] = []
@@ -406,3 +418,165 @@ def run_agent(
             + "\n".join(f"- {s.get('title') or s['url']}: {s['url']}" for s in sources)
         )
     return answer, sources, messages
+
+
+# ---------------------------------------------------------------------------
+# Groq backend (OpenAI-compatible API)
+# ---------------------------------------------------------------------------
+
+def _groq_http_client(config: Config):
+    """An httpx client that trusts the OS store (handles Kaspersky), for Groq.
+
+    httpx doesn't use urllib3, so truststore works here even on Anaconda's old
+    urllib3. Falls back to a CA bundle or (last resort) no verification.
+    """
+    import ssl
+
+    import httpx
+
+    timeout = httpx.Timeout(60.0)
+    try:
+        import truststore
+
+        ctx = truststore.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        return httpx.Client(verify=ctx, timeout=timeout)
+    except Exception:  # noqa: BLE001 - truststore optional
+        pass
+    if config.ca_bundle:
+        return httpx.Client(verify=config.ca_bundle, timeout=timeout)
+    if config.request_verify is False:
+        logger.warning("Groq: TLS verification disabled (insecure).")
+        return httpx.Client(verify=False, timeout=timeout)
+    return httpx.Client(timeout=timeout)
+
+
+def _make_groq_client(config: Config):
+    """Create an OpenAI SDK client pointed at Groq's API."""
+    from openai import OpenAI
+
+    return OpenAI(
+        api_key=config.groq_api_key,
+        base_url=config.groq_base_url,
+        http_client=_groq_http_client(config),
+    )
+
+
+def list_groq_models(config: Config) -> list[str]:
+    """Return Groq model ids (empty list if no key or on error)."""
+    if not config.groq_api_key:
+        return []
+    try:
+        client = _make_groq_client(config)
+        return sorted(m.id for m in client.models.list().data)
+    except Exception:  # noqa: BLE001 - best-effort; used for nicer UIs
+        return []
+
+
+def _groq_chat_with_status(client: Any, model: str, messages: list, tools: Any, label: str) -> Any:
+    """Groq chat call with a spinner (mirrors _chat_with_status for Ollama)."""
+    kwargs: dict[str, Any] = {"model": model, "messages": messages}
+    if tools:
+        kwargs["tools"] = tools
+        kwargs["tool_choice"] = "auto"
+    if _console is not None:
+        with _console.status(f"[cyan]{label}[/cyan]", spinner="dots"):
+            return client.chat.completions.create(**kwargs)
+    print(f"... {label}", flush=True)
+    return client.chat.completions.create(**kwargs)
+
+
+def _run_agent_groq(
+    user_query: str,
+    model: str | None,
+    history: list[dict[str, Any]] | None,
+    config: Config,
+    max_iterations: int,
+    use_tools: bool,
+) -> tuple[str, list[dict[str, str]], list[dict[str, Any]]]:
+    """The tool-calling loop against Groq's OpenAI-compatible API.
+
+    Same shape as run_agent(), but uses OpenAI-style messages/tool_calls: the
+    assistant returns ``tool_calls`` with ids, and each tool result is a message
+    with ``role: "tool"`` and a matching ``tool_call_id``.
+    """
+    model = model or config.groq_model
+    if not config.groq_api_key:
+        raise RuntimeError(
+            "Groq backend selected but no API key found. Set GROQ_API_KEY in your "
+            ".env (or groq_api_key in config.yaml). Get a free key at "
+            "https://console.groq.com/keys"
+        )
+
+    client = _make_groq_client(config)
+    tools = build_tool_schemas() if use_tools else None
+
+    messages: list[dict[str, Any]] = list(history) if history else []
+    if not messages or messages[0].get("role") != "system":
+        messages.insert(0, {"role": "system", "content": config.system_prompt or SYSTEM_PROMPT})
+    messages.append({"role": "user", "content": user_query})
+
+    sources: list[dict[str, str]] = []
+
+    for step in range(1, max_iterations + 1):
+        label = "Contacting Groq..." if step == 1 else f"Groq reasoning (step {step})..."
+        response = _groq_chat_with_status(client, model, messages, tools, label)
+        msg = response.choices[0].message
+        tool_calls = list(msg.tool_calls or [])
+
+        assistant_msg: dict[str, Any] = {"role": "assistant", "content": msg.content or ""}
+        if tool_calls:
+            assistant_msg["tool_calls"] = [
+                {
+                    "id": tc.id,
+                    "type": "function",
+                    "function": {"name": tc.function.name, "arguments": tc.function.arguments},
+                }
+                for tc in tool_calls
+            ]
+        messages.append(assistant_msg)
+
+        if not tool_calls:
+            return (msg.content or "").strip(), sources, messages
+
+        for tc in tool_calls:
+            name = tc.function.name
+            args = _coerce_args(tc.function.arguments)
+            _print_tool_call(step, name, args)
+            result = _execute_tool(name, args, config)
+            messages.append({"role": "tool", "tool_call_id": tc.id, "content": result})
+
+            if name == "web_search":
+                found = _extract_sources(result)
+                sources.extend(found)
+                if config.auto_fetch_pages and found:
+                    top_url = found[0]["url"]
+                    _print_tool_call(step, "fetch_page (auto)", {"url": top_url})
+                    page = fetch_page(
+                        top_url, max_chars=config.max_page_chars, verify=config.request_verify
+                    )
+                    # Can't use role:tool without a model tool_call id -> add as context.
+                    messages.append(
+                        {"role": "user", "content": f"[auto-fetched page for {top_url}]\n{page}"}
+                    )
+
+    # Iteration cap: force a final answer.
+    logger.warning("run_agent(groq): hit max_iterations=%d; forcing a final answer.", max_iterations)
+    messages.append(
+        {
+            "role": "user",
+            "content": (
+                "Stop searching. Using the search snippets and page text above, "
+                "state the concrete answer directly now (the actual number/figure), "
+                "then cite the source URLs. Do not describe what you tried or call "
+                "any more tools."
+            ),
+        }
+    )
+    response = _groq_chat_with_status(client, model, messages, None, "Composing final answer...")
+    final = response.choices[0].message.content or ""
+    messages.append({"role": "assistant", "content": final})
+    if not final.strip():
+        final = "I couldn't compose a final answer, but here are the sources:\n" + "\n".join(
+            f"- {s.get('title') or s['url']}: {s['url']}" for s in sources
+        )
+    return final.strip(), sources, messages
