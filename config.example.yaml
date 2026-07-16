@@ -21,7 +21,7 @@ model: "llama3.1"                         # A tool-calling-capable model you've 
 
 # Groq (OpenAI-compatible cloud API) settings — only used when backend: groq.
 # Get a free key at https://console.groq.com/keys and put it in .env as GROQ_API_KEY.
-groq_model: "llama-3.3-70b-versatile"     # e.g. llama-3.3-70b-versatile, openai/gpt-oss-20b, qwen/qwen3-32b
+groq_model: "openai/gpt-oss-20b"          # reliable tool-caller; also try qwen/qwen3-32b, openai/gpt-oss-120b
 groq_base_url: "https://api.groq.com/openai/v1"
 groq_api_key: ""                          # better to set GROQ_API_KEY in .env instead
 

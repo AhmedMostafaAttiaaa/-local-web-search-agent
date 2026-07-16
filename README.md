@@ -145,8 +145,12 @@ API with free open models (Llama, Qwen, gpt-oss) that support tool-calling.
    ```
 
 Or set it permanently in `config.yaml`: `backend: "groq"`. Everything else (web
-search, sources, TLS handling) works identically. Good tool-capable Groq models:
-`llama-3.3-70b-versatile`, `openai/gpt-oss-20b`, `qwen/qwen3-32b`.
+search, sources, TLS handling) works identically.
+
+**Model note:** prefer `openai/gpt-oss-20b` (the default) or `qwen/qwen3-32b` —
+they do tool-calling reliably on Groq. Some Llama models (e.g.
+`llama-3.3-70b-versatile`) intermittently emit malformed tool calls and fail with
+`tool_use_failed`.
 
 ### Sample output (abridged)
 

@@ -38,7 +38,8 @@ DEFAULTS: dict[str, Any] = {
     "ollama_host": "http://localhost:11434",
     "model": "llama3.1",
     # Groq (OpenAI-compatible API). Needs an API key from https://console.groq.com
-    "groq_model": "llama-3.3-70b-versatile",
+    # gpt-oss-20b handles tool-calling reliably; some Llama models on Groq don't.
+    "groq_model": "openai/gpt-oss-20b",
     "groq_base_url": "https://api.groq.com/openai/v1",
     "groq_api_key": "",
     # Optional: override the built-in system prompt (empty -> use the default).
