@@ -53,15 +53,22 @@ runs elsewhere on your network.
 ## 2. Setup (step by step)
 
 ```bash
-# 0. (recommended) create + activate an isolated virtual environment.
-#    A fresh venv gets urllib3>=2, which enables SECURE TLS verification via the
-#    OS trust store (truststore) — important if antivirus/proxy intercepts HTTPS.
+# 0. (recommended) create + activate an isolated environment. Use EITHER venv OR
+#    conda — but a DEDICATED one, not conda `base` (its old urllib3 v1 breaks the
+#    secure TLS path). A fresh env pulls urllib3>=2 -> secure verification works.
+
+# --- Option A: conda ---
+conda env create -f environment.yml   # creates env "websearch" + installs deps
+conda activate websearch
+# (deps are installed by environment.yml, so you can skip step 1 below)
+
+# --- Option B: venv ---
 python -m venv .venv
 .venv\Scripts\activate            # Windows CMD  (PowerShell: .venv\Scripts\Activate.ps1)
 # source .venv/Scripts/activate   # Git Bash
 # source .venv/bin/activate       # macOS/Linux
 
-# 1. Install Python dependencies
+# 1. Install Python dependencies (venv only; conda did this already)
 pip install -r requirements.txt
 
 # 2. Start SearxNG (JSON API is enabled automatically via searxng/settings.yml)

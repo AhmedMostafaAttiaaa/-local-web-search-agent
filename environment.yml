@@ -1,0 +1,16 @@
+# Conda environment for this project.
+#
+# Create it with:   conda env create -f environment.yml
+# Activate it with: conda activate websearch
+#
+# NOTE: use a DEDICATED env (not conda `base`). Base often ships an old urllib3
+# (v1.x) that breaks secure TLS verification (truststore). A fresh env like this
+# one pulls urllib3 >= 2 via pip, so HTTPS is verified securely.
+name: websearch
+channels:
+  - defaults
+dependencies:
+  - python=3.12
+  - pip
+  - pip:
+      - -r requirements.txt
