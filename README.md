@@ -1,4 +1,4 @@
-# Ollama Web-Search Agent
+# Local 'ollama' Web-Search Agent
 
 A **100% free, local** tool-calling agent that lets any tool-capable Ollama
 model **search the live internet** instead of relying only on its training data.
