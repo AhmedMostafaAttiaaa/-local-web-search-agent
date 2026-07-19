@@ -144,6 +144,14 @@ python search_agent.py --model qwen2.5 "latest news about the mars rover"
 python search_agent.py --no-search "explain the quicksort algorithm"
 ```
 
+**Use your device's own local Ollama instead of the remote host:**
+```bash
+python search_agent.py --local "what is the capital of france"
+```
+`.env`'s `OLLAMA_HOST` (the remote machine) stays the default for every other
+command — `--local` only switches to `http://localhost:11434` for that one
+run and auto-selects `qwen3:4b` (override with `--model` if you pull others).
+
 ### Using Groq instead of Ollama (cloud, no local model needed)
 
 The agent also supports [Groq](https://console.groq.com) — a fast, OpenAI-compatible

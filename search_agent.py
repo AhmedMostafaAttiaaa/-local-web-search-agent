@@ -6,6 +6,7 @@ Usage:
     python search_agent.py --chat --session work   # resume/continue a named session
     python search_agent.py --model qwen2.5 "latest news on ..."
     python search_agent.py --no-search "explain quicksort"   # plain chat, no tools
+    python search_agent.py --local "what is the capital of france"  # your device's own Ollama
 """
 from __future__ import annotations
 
@@ -100,6 +101,11 @@ def _print_error(message: str) -> None:
 
 # Names/substrings that hint a model can do tool-calling (best-effort suggestions).
 _TOOL_HINTS = ("llama3.1", "llama3.2", "qwen", "mistral", "gpt-oss", "firefunction", "command-r")
+
+# Your device's own Ollama, as opposed to the remote host in .env/config.yaml.
+# qwen3:4b is the only tool-capable model currently pulled locally.
+LOCAL_OLLAMA_HOST = "http://localhost:11434"
+LOCAL_OLLAMA_MODEL = "qwen3:4b"
 
 
 def _print_model_not_found(model: str, config: Config) -> None:
@@ -206,6 +212,15 @@ def main(argv: list[str] | None = None) -> int:
         "--backend", choices=["ollama", "groq"], help="LLM backend (overrides config)."
     )
     parser.add_argument(
+        "--local",
+        action="store_true",
+        help=(
+            f"Use your device's own Ollama ({LOCAL_OLLAMA_HOST}) instead of the "
+            f"remote host in .env/config.yaml. Defaults model to {LOCAL_OLLAMA_MODEL} "
+            "(the only tool-capable model there) unless --model is also given."
+        ),
+    )
+    parser.add_argument(
         "--config", default="config.yaml", help="Path to the config file (default: config.yaml)."
     )
     args = parser.parse_args(argv)
@@ -216,8 +231,15 @@ def main(argv: list[str] | None = None) -> int:
     config = load_config(args.config)
     if args.backend:
         config.backend = args.backend
+    if args.local:
+        config.ollama_host = LOCAL_OLLAMA_HOST
     # Pick the right default model for the active backend.
-    default_model = config.groq_model if config.backend == "groq" else config.model
+    if config.backend == "groq":
+        default_model = config.groq_model
+    elif args.local:
+        default_model = LOCAL_OLLAMA_MODEL
+    else:
+        default_model = config.model
     model = args.model or default_model
     use_tools = not args.no_search
 
