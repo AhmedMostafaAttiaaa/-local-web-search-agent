@@ -18,3 +18,4 @@ USAGE.txt
 # Local CA bundles / certs (corporate proxy)
 *.pem
 *.crt
+git_guide.txt 
