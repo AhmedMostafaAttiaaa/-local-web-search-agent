@@ -54,7 +54,7 @@ SYSTEM_PROMPT = (
     "returns an error (403/404) or its text does not contain the figure, do NOT "
     "keep retrying pages — fall back to the numbers already shown in the search "
     "snippets.\n"
-    "Always finish with a short, direct answer that states the concrete figure, "
+    "Always finish with a short, direct answer that states the concrete figure. "
     "then cite the source URLs. Do not narrate your process or your uncertainty."
 )
 
