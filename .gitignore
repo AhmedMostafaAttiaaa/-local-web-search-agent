@@ -21,6 +21,7 @@ EXPLANATION.md
 explanition.md
 USAGE.txt
 GIT_COMMANDS.txt
+chat_history.txt
 
 # Local CA bundles / certs (corporate proxy)
 *.pem
