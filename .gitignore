@@ -14,6 +14,7 @@ COMMANDS.md
 EXPLANATION.md
 explanition.md
 USAGE.txt
+GIT_COMMANDS.txt
 
 # Local CA bundles / certs (corporate proxy)
 *.pem
