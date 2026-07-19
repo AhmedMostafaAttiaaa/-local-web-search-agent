@@ -43,3 +43,10 @@ max_page_chars: 3000                      # Max characters returned by fetch_pag
 verify_ssl: true                          # Verify TLS certificates for web requests
 ca_bundle: ""                             # Optional path to a CA bundle (.pem/.crt)
 use_os_truststore: true                   # Verify via OS trust store (needs `truststore`)
+
+# --- Result caching ----------------------------------------------------------
+# web_search/fetch_page results are cached on disk under .cache/ so repeated
+# identical calls within the TTL window skip the network. Failed/empty results
+# are never cached, so they're retried on the next call.
+cache_enabled: true                       # Set false to always hit the network
+cache_ttl_seconds: 300                    # How long a cached result stays fresh

@@ -9,6 +9,12 @@ models.md
 .venv/
 venv/
 
+# Disk cache for web_search/fetch_page results (tools/cache.py)
+.cache/
+
+# Persisted --chat conversation history (agent/persistence.py)
+.chat_sessions/
+
 # Personal notes / cheatsheets (not for the repo)
 COMMANDS.md
 EXPLANATION.md

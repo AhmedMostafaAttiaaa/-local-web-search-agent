@@ -250,6 +250,8 @@ def _execute_tool(name: str, args: dict[str, Any], config: Config) -> str:
             prefer="searxng",
             searxng_host=config.searxng_host,
             verify=config.request_verify,
+            cache_enabled=config.cache_enabled,
+            cache_ttl_seconds=config.cache_ttl_seconds,
         )
         if not results:
             return "[web_search notice] No results (all search backends failed or empty)."
@@ -260,7 +262,13 @@ def _execute_tool(name: str, args: dict[str, Any], config: Config) -> str:
         if not url:
             return "[error] fetch_page called without a 'url'."
         max_chars = int(args.get("max_chars", config.max_page_chars) or config.max_page_chars)
-        return fetch_page(url, max_chars=max_chars, verify=config.request_verify)
+        return fetch_page(
+            url,
+            max_chars=max_chars,
+            verify=config.request_verify,
+            cache_enabled=config.cache_enabled,
+            cache_ttl_seconds=config.cache_ttl_seconds,
+        )
 
     return f"[error] Unknown tool: {name}"
 
@@ -388,6 +396,8 @@ def run_agent(
                         top_url,
                         max_chars=config.max_page_chars,
                         verify=config.request_verify,
+                        cache_enabled=config.cache_enabled,
+                        cache_ttl_seconds=config.cache_ttl_seconds,
                     )
                     messages.append(
                         {"role": "tool", "tool_name": "fetch_page", "content": page}
@@ -552,7 +562,11 @@ def _run_agent_groq(
                     top_url = found[0]["url"]
                     _print_tool_call(step, "fetch_page (auto)", {"url": top_url})
                     page = fetch_page(
-                        top_url, max_chars=config.max_page_chars, verify=config.request_verify
+                        top_url,
+                        max_chars=config.max_page_chars,
+                        verify=config.request_verify,
+                        cache_enabled=config.cache_enabled,
+                        cache_ttl_seconds=config.cache_ttl_seconds,
                     )
                     # Can't use role:tool without a model tool_call id -> add as context.
                     messages.append(

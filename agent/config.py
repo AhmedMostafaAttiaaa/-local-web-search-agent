@@ -57,6 +57,10 @@ DEFAULTS: dict[str, Any] = {
     # whatever your OS trusts (incl. corporate/AV MITM roots like Kaspersky), so
     # HTTPS works securely without disabling verification. No-op if unavailable.
     "use_os_truststore": True,
+    # Disk cache for web_search/fetch_page results (see tools/cache.py). Repeated
+    # identical calls within the TTL window skip the network.
+    "cache_enabled": True,
+    "cache_ttl_seconds": 300,
 }
 
 # Config field -> environment variable that overrides it.
@@ -89,6 +93,8 @@ class Config:
     verify_ssl: bool
     ca_bundle: str
     use_os_truststore: bool
+    cache_enabled: bool
+    cache_ttl_seconds: int
 
     @property
     def request_verify(self) -> bool | str:
@@ -143,6 +149,8 @@ def load_config(path: str | os.PathLike[str] = "config.yaml") -> Config:
     data["verify_ssl"] = _as_bool(data["verify_ssl"])
     data["ca_bundle"] = str(data["ca_bundle"] or "")
     data["use_os_truststore"] = _as_bool(data["use_os_truststore"])
+    data["cache_enabled"] = _as_bool(data["cache_enabled"])
+    data["cache_ttl_seconds"] = int(data["cache_ttl_seconds"])
     data["backend"] = str(data["backend"] or "ollama").strip().lower()
     data["groq_api_key"] = str(data["groq_api_key"] or "")
     data["system_prompt"] = str(data["system_prompt"] or "")

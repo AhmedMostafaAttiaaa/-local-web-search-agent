@@ -120,11 +120,19 @@ If you change `searxng/settings.yml`, run `docker compose restart` to apply it.
 python search_agent.py "what is the price of iphone 16 in india"
 ```
 
-**Interactive chat (keeps history across turns):**
+**Interactive chat (keeps history across turns, persisted to disk):**
 ```bash
 python search_agent.py --chat
 # type 'exit' or 'quit' to leave
+
+# named sessions: close the CLI and re-run this to resume where you left off
+python search_agent.py --chat --session work
+
+# start a session over, discarding its saved history
+python search_agent.py --chat --session work --new-session
 ```
+Chat history is saved under `.chat_sessions/<session>.json` after every turn
+(git-ignored — local only).
 
 **Override the model at runtime:**
 ```bash
@@ -196,6 +204,8 @@ Sources:
 | `max_page_chars`   | `3000`                    | Max characters returned by `fetch_page`            |
 | `verify_ssl`       | `true`                    | Verify TLS certs for web requests                  |
 | `ca_bundle`        | `""`                      | Optional path to a CA bundle (corporate proxy)     |
+| `cache_enabled`    | `true`                    | Cache `web_search`/`fetch_page` results on disk    |
+| `cache_ttl_seconds`| `300`                     | How long a cached result stays fresh               |
 
 **Env var overrides** (env wins over `config.yaml`): `OLLAMA_HOST`,
 `OLLAMA_MODEL`, `SEARXNG_HOST`, `REQUESTS_CA_BUNDLE` (→ `ca_bundle`). These can

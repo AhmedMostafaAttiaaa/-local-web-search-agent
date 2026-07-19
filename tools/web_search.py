@@ -20,6 +20,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from tools._http import request as http_request
+from tools.cache import DEFAULT_TTL_SECONDS, cached_call
 
 logger = logging.getLogger(__name__)
 
@@ -154,29 +155,14 @@ def search_duckduckgo(
     return results
 
 
-def web_search(
+def _web_search_uncached(
     query: str,
-    num_results: int = 5,
-    prefer: str = "searxng",
-    searxng_host: str = "http://localhost:8080",
-    verify: VerifyType = True,
+    num_results: int,
+    prefer: str,
+    searxng_host: str,
+    verify: VerifyType,
 ) -> list[dict[str, str]]:
-    """Search the web, trying the preferred backend first, then falling back.
-
-    Tries SearxNG first (by default). If it raises OR returns zero results,
-    falls back to DuckDuckGo. Logs which backend actually produced results.
-
-    Args:
-        query: The search query.
-        num_results: Maximum number of results to return.
-        prefer: ``"searxng"`` (default) or ``"duckduckgo"`` to try first.
-        searxng_host: Base URL of the SearxNG instance.
-        verify: Passed to requests' ``verify=`` (True/False or CA bundle path).
-
-    Returns:
-        A list of ``{"title", "url", "snippet"}`` dicts. Empty list if every
-        backend fails (never raises).
-    """
+    """The actual multi-backend search, without any caching."""
     order = ["searxng", "duckduckgo"]
     if prefer == "duckduckgo":
         order = ["duckduckgo", "searxng"]
@@ -199,3 +185,44 @@ def web_search(
 
     logger.error("web_search: all backends failed. Last error: %s", last_error)
     return []
+
+
+def web_search(
+    query: str,
+    num_results: int = 5,
+    prefer: str = "searxng",
+    searxng_host: str = "http://localhost:8080",
+    verify: VerifyType = True,
+    cache_enabled: bool = True,
+    cache_ttl_seconds: int = DEFAULT_TTL_SECONDS,
+) -> list[dict[str, str]]:
+    """Search the web, trying the preferred backend first, then falling back.
+
+    Tries SearxNG first (by default). If it raises OR returns zero results,
+    falls back to DuckDuckGo. Logs which backend actually produced results.
+
+    Args:
+        query: The search query.
+        num_results: Maximum number of results to return.
+        prefer: ``"searxng"`` (default) or ``"duckduckgo"`` to try first.
+        searxng_host: Base URL of the SearxNG instance.
+        verify: Passed to requests' ``verify=`` (True/False or CA bundle path).
+        cache_enabled: If True, cache results on disk for `cache_ttl_seconds`
+            and reuse them for an identical query without hitting the network.
+        cache_ttl_seconds: How long a cached result stays fresh.
+
+    Returns:
+        A list of ``{"title", "url", "snippet"}`` dicts. Empty list if every
+        backend fails (never raises). Empty results are never cached, so a
+        failed lookup is retried on the next call.
+    """
+    if not cache_enabled:
+        return _web_search_uncached(query, num_results, prefer, searxng_host, verify)
+
+    key = f"web_search:{prefer}:{searxng_host}:{num_results}:{query}"
+    return cached_call(
+        key,
+        lambda: _web_search_uncached(query, num_results, prefer, searxng_host, verify),
+        ttl_seconds=cache_ttl_seconds,
+        should_cache=bool,
+    )

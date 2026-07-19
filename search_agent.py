@@ -3,6 +3,7 @@
 Usage:
     python search_agent.py "what is the price of iphone 16 in india"
     python search_agent.py --chat
+    python search_agent.py --chat --session work   # resume/continue a named session
     python search_agent.py --model qwen2.5 "latest news on ..."
     python search_agent.py --no-search "explain quicksort"   # plain chat, no tools
 """
@@ -17,6 +18,7 @@ import ollama
 
 from agent.config import Config, load_config
 from agent.ollama_client import list_models, run_agent
+from agent.persistence import DEFAULT_SESSION_NAME, clear_history, load_history, save_history
 
 # --- optional pretty output ---------------------------------------------------
 try:
@@ -133,15 +135,26 @@ def _single_shot(query: str, model: str, config: Config, use_tools: bool) -> Non
     _print_answer(answer, sources)
 
 
-def _chat_mode(model: str, config: Config, use_tools: bool) -> None:
-    """Interactive multi-turn chat; conversation history persists across turns."""
+def _chat_mode(
+    model: str, config: Config, use_tools: bool, session: str = DEFAULT_SESSION_NAME, new_session: bool = False
+) -> None:
+    """Interactive multi-turn chat. History persists to disk under `session`,
+    so closing the CLI and running `--chat --session <session>` again resumes
+    where you left off."""
+    if new_session:
+        clear_history(session)
+        history: list[dict[str, Any]] | None = None
+    else:
+        history = load_history(session)
+
     banner = f"Interactive chat with '{model}' (tools {'ON' if use_tools else 'OFF'}). Type 'exit' or 'quit' to stop."
+    if history:
+        banner += f"\nResumed session '{session}' ({len(history)} prior messages)."
     if _console is not None:
         _console.print(f"[bold]{banner}[/bold]")
     else:
         print(banner)
 
-    history: list[dict[str, Any]] | None = None
     while True:
         try:
             user_input = input("\nyou> ").strip()
@@ -163,6 +176,7 @@ def _chat_mode(model: str, config: Config, use_tools: bool) -> None:
             use_tools=use_tools,
         )
         _print_answer(answer, sources)
+        save_history(history, session)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -172,6 +186,16 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("query", nargs="?", help="A single question to answer.")
     parser.add_argument("--chat", action="store_true", help="Interactive chat mode.")
+    parser.add_argument(
+        "--session",
+        default=DEFAULT_SESSION_NAME,
+        help="Named --chat session to persist/resume (default: 'default').",
+    )
+    parser.add_argument(
+        "--new-session",
+        action="store_true",
+        help="Start --session fresh, discarding any saved history for it.",
+    )
     parser.add_argument("--model", help="Override the model from config at runtime.")
     parser.add_argument(
         "--no-search",
@@ -203,7 +227,7 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         if args.chat:
-            _chat_mode(model, config, use_tools)
+            _chat_mode(model, config, use_tools, session=args.session, new_session=args.new_session)
         else:
             _single_shot(args.query, model, config, use_tools)
     except ollama.ResponseError as exc:

@@ -13,6 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 
 from tools._http import request as http_request
+from tools.cache import DEFAULT_TTL_SECONDS, cached_call
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,13 @@ DEFAULT_TIMEOUT = 12  # seconds
 _STRIP_TAGS = ("script", "style", "nav", "footer", "header", "aside", "form", "noscript")
 
 
-def fetch_page(url: str, max_chars: int = 3000, verify: VerifyType = True) -> str:
+def fetch_page(
+    url: str,
+    max_chars: int = 3000,
+    verify: VerifyType = True,
+    cache_enabled: bool = True,
+    cache_ttl_seconds: int = DEFAULT_TTL_SECONDS,
+) -> str:
     """Fetch ``url`` and return cleaned, whitespace-collapsed visible text.
 
     Never raises: on any error it returns a human-readable ``[fetch_page ...]``
@@ -39,11 +46,29 @@ def fetch_page(url: str, max_chars: int = 3000, verify: VerifyType = True) -> st
         url: The full URL to fetch (http/https).
         max_chars: Truncate the returned text to at most this many characters.
         verify: Passed to requests' ``verify=`` (True/False or CA bundle path).
+        cache_enabled: If True, cache the extracted text on disk for
+            `cache_ttl_seconds` and reuse it for the same (url, max_chars).
+        cache_ttl_seconds: How long a cached page stays fresh.
 
     Returns:
         The cleaned page text, or a ``[fetch_page error]`` / ``[fetch_page notice]``
-        message string.
+        message string. Error/notice results are never cached, so a failed
+        fetch is retried on the next call.
     """
+    if not cache_enabled:
+        return _fetch_page_uncached(url, max_chars, verify)
+
+    key = f"fetch_page:{url}:{max_chars}"
+    return cached_call(
+        key,
+        lambda: _fetch_page_uncached(url, max_chars, verify),
+        ttl_seconds=cache_ttl_seconds,
+        should_cache=lambda text: not text.startswith("[fetch_page"),
+    )
+
+
+def _fetch_page_uncached(url: str, max_chars: int, verify: VerifyType) -> str:
+    """The actual fetch + text extraction, without any caching."""
     headers = {"User-Agent": USER_AGENT}
     try:
         resp = http_request("get", url, headers=headers, timeout=DEFAULT_TIMEOUT, verify=verify)
