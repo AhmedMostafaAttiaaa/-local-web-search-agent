@@ -224,13 +224,20 @@ live in a `.env` file.
 ## 5. Tests
 
 ```bash
-pytest -v
+python -m pytest tests/ -q      # 48 tests, ~10s
+python -m pytest tests/ -k cache -v
+
 # or a quick manual smoke test:
 python tests/test_tools.py
 ```
 
+Pass `tests/` explicitly — bare `pytest` from the root also picks up
+`test_ollama.py`, a script that hits your Ollama host and rewrites `models.md`
+on import.
+
 Network-dependent tests **skip automatically** if SearxNG/DuckDuckGo are
-unreachable, so the suite won't hard-fail offline.
+unreachable, so the suite won't hard-fail offline. See `COMMANDS.md` §6 for the
+full set.
 
 ---
 

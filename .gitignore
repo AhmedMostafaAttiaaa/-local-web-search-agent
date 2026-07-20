@@ -26,4 +26,10 @@ chat_history.txt
 # Local CA bundles / certs (corporate proxy)
 *.pem
 *.crt
-git_guide.txt 
+git_guide.txt
+319a4d72-70ea-4525-be2c-2ef5b6dcc510.conversation.md
+319a4d72-70ea-4525-be2c-2ef5b6dcc510.jsonl
+c880ce04-8a37-4cae-83db-dc6803e98e46.conversation.md
+c880ce04-8a37-4cae-83db-dc6803e98e46.jsonl
+*.jsonl
+*.conversation.md
