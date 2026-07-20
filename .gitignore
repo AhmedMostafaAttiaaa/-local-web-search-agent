@@ -27,6 +27,10 @@ chat_history.txt
 *.pem
 *.crt
 git_guide.txt
+
+# Claude Code session transcripts (may capture .env reads — keep out of git)
+*.jsonl
+*.conversation.md
 319a4d72-70ea-4525-be2c-2ef5b6dcc510.conversation.md
 319a4d72-70ea-4525-be2c-2ef5b6dcc510.jsonl
 c880ce04-8a37-4cae-83db-dc6803e98e46.conversation.md
