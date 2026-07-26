@@ -1,1 +1,2 @@
-"""Agent package: configuration loading and the Ollama tool-calling loop."""
+"""Agent package: configuration loading, the Ollama/Groq tool-calling loop, and
+persistence for resumable named chat sessions."""

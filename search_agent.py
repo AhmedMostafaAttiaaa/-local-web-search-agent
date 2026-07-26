@@ -7,6 +7,7 @@ Usage:
     python search_agent.py --model qwen2.5 "latest news on ..."
     python search_agent.py --no-search "explain quicksort"   # plain chat, no tools
     python search_agent.py --local "what is the capital of france"  # your device's own Ollama
+    python search_agent.py --chat --backend groq   # answer via the Groq cloud API instead
 """
 from __future__ import annotations
 
