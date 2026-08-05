@@ -28,6 +28,7 @@ from typing import Any
 import ollama
 
 from agent.config import Config, enable_os_truststore, load_config
+from tools.calculator import calculator
 from tools.fetch_page import fetch_page
 from tools.web_search import web_search
 
@@ -127,6 +128,28 @@ def build_tool_schemas() -> list[dict[str, Any]]:
                         },
                     },
                     "required": ["url"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "calculator",
+                "description": (
+                    "Evaluate a math expression exactly (offline). Use this for any "
+                    "arithmetic, percentages, or unit conversions instead of computing "
+                    "in your head. Supports + - * / // % **, parentheses, pi/e/tau, and "
+                    "sqrt/abs/round/floor/ceil/log/log10/sin/cos/tan."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "expression": {
+                            "type": "string",
+                            "description": "The math expression, e.g. '1280 * 30.9'.",
+                        },
+                    },
+                    "required": ["expression"],
                 },
             },
         },
@@ -269,6 +292,12 @@ def _execute_tool(name: str, args: dict[str, Any], config: Config) -> str:
             cache_enabled=config.cache_enabled,
             cache_ttl_seconds=config.cache_ttl_seconds,
         )
+
+    if name == "calculator":
+        expression = str(args.get("expression", "")).strip()
+        if not expression:
+            return "[error] calculator called without an 'expression'."
+        return calculator(expression)
 
     return f"[error] Unknown tool: {name}"
 
