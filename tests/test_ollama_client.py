@@ -44,7 +44,13 @@ def _make_config(**overrides) -> Config:
 def test_build_tool_schemas_has_expected_tools():
     schemas = build_tool_schemas()
     names = {s["function"]["name"] for s in schemas}
-    assert names == {"web_search", "fetch_page"}
+    assert names == {
+        "web_search",
+        "fetch_page",
+        "calculator",
+        "current_datetime",
+        "text_stats",
+    }
 
 
 def test_coerce_args_dict_passthrough():
