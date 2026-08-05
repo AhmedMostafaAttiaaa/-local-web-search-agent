@@ -31,6 +31,7 @@ from agent.config import Config, enable_os_truststore, load_config
 from tools.calculator import calculator
 from tools.datetime_tool import current_datetime
 from tools.fetch_page import fetch_page
+from tools.text_stats import text_stats
 from tools.web_search import web_search
 
 logger = logging.getLogger(__name__)
@@ -172,6 +173,27 @@ def build_tool_schemas() -> list[dict[str, Any]]:
                         },
                     },
                     "required": [],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "text_stats",
+                "description": (
+                    "Count the words, characters, and lines of a piece of text. "
+                    "Use for exact 'how many words/characters' questions instead of "
+                    "estimating."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "text": {
+                            "type": "string",
+                            "description": "The text to measure.",
+                        },
+                    },
+                    "required": ["text"],
                 },
             },
         },
@@ -323,6 +345,9 @@ def _execute_tool(name: str, args: dict[str, Any], config: Config) -> str:
 
     if name == "current_datetime":
         return current_datetime(utc=bool(args.get("utc", False)))
+
+    if name == "text_stats":
+        return text_stats(str(args.get("text", "")))
 
     return f"[error] Unknown tool: {name}"
 
