@@ -18,10 +18,25 @@ backend: "ollama"                         # "ollama" (local) or "groq" (cloud AP
 # Ollama (local) settings:
 ollama_host: "http://localhost:11434"    # Ollama server URL
 model: "llama3.1"                         # A tool-calling-capable model you've pulled
+# Tool-calling-capable local models to choose from (pull first with `ollama pull <name>`):
+#   llama3.1              - solid all-round default, good tool-calling
+#   llama3.2              - smaller/faster, fine for simple lookups
+#   qwen2.5               - strong reasoning + reliable tool-calling
+#   qwen3-vl:8b           - multimodal, lighter
+#   gpt-oss:20b           - reasoning model; verbose but capable
+#   mistral-nemo          - fast, decent tool-calling
+# NOTE: not every model supports tools — pick one tagged tool-capable, or the
+# agent will fall back to plain chat. Set the one you want above (or --model).
 
 # Groq (OpenAI-compatible cloud API) settings — only used when backend: groq.
 # Get a free key at https://console.groq.com/keys and put it in .env as GROQ_API_KEY.
-groq_model: "openai/gpt-oss-20b"          # reliable tool-caller; also try qwen/qwen3-32b, openai/gpt-oss-120b
+groq_model: "openai/gpt-oss-20b"          # reliable tool-caller (see catalog below)
+# Groq-hosted model options (all OpenAI-compatible, fast):
+#   openai/gpt-oss-20b    - reliable tool-caller, good default
+#   openai/gpt-oss-120b   - larger, stronger reasoning, a bit slower
+#   qwen/qwen3-32b        - strong reasoning + tool-calling
+#   llama-3.3-70b-versatile - capable, but tool-calling can be less consistent
+#   llama-3.1-8b-instant  - fastest/cheapest, best for simple queries
 groq_base_url: "https://api.groq.com/openai/v1"
 groq_api_key: ""                          # better to set GROQ_API_KEY in .env instead
 
