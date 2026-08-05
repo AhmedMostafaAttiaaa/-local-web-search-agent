@@ -17,18 +17,95 @@ ollama-search-agent/
 ├── searxng/
 │   └── settings.yml            # enables formats: [html, json] + disables limiter
 ├── config.example.yaml         # copy to config.yaml
-├── config.yaml                 # active config
 ├── search_agent.py             # CLI entrypoint (single query + --chat)
+├── streamlit_app.py            # optional web UI
 ├── tools/
-│   ├── __init__.py
 │   ├── web_search.py           # SearxNG search + DuckDuckGo fallback
-│   └── fetch_page.py           # fetch & clean page text
+│   ├── fetch_page.py           # fetch & clean page text
+│   ├── calculator.py           # exact offline math
+│   ├── datetime_tool.py        # real current date/time
+│   ├── text_stats.py           # word / char / line counts
+│   ├── cache.py                # disk TTL cache for web results
+│   └── _http.py                # TLS-resilient HTTP (corporate proxy / AV)
 ├── agent/
-│   ├── __init__.py
-│   ├── ollama_client.py        # tool schemas + the tool-calling loop
-│   └── config.py               # loads config.yaml / .env
-└── tests/
-    └── test_tools.py
+│   ├── ollama_client.py        # tool schemas + the loop (Ollama & Groq backends)
+│   ├── config.py               # loads config.yaml / .env
+│   └── persistence.py          # save / resume named chat sessions
+└── tests/                      # pytest suite (per-tool + config/persistence)
+```
+
+---
+
+## Architecture
+
+The model never touches the internet itself — it *asks* for a tool, the code
+runs it, and hands the result back, looping until the model produces a final
+answer. (Diagrams render on GitHub and in most Markdown viewers.)
+
+**Components**
+
+```mermaid
+flowchart TD
+    U([You]) -->|question| CLI[search_agent.py<br/>CLI]
+    U -->|question| UI[streamlit_app.py<br/>web UI]
+
+    CLI --> LOOP
+    UI --> LOOP
+
+    subgraph AGENT [agent/]
+        CFG[config.py]
+        LOOP[ollama_client.py<br/>tool-calling loop]
+        PERS[persistence.py]
+    end
+
+    CFG -.settings.-> LOOP
+    LOOP <-.history.-> PERS
+
+    LOOP -->|which backend?| BSEL{backend}
+    BSEL -->|ollama| OLL[(Ollama<br/>local/remote LLM)]
+    BSEL -->|groq| GRQ[(Groq<br/>cloud LLM API)]
+
+    LOOP -->|runs tools| TOOLS
+
+    subgraph TOOLS [tools/]
+        WS[web_search]
+        FP[fetch_page]
+        CALC[calculator]
+        DT[current_datetime]
+        TS[text_stats]
+        CACHE[cache]
+        HTTP[_http]
+    end
+
+    WS --> HTTP
+    FP --> HTTP
+    WS --> CACHE
+    FP --> CACHE
+    HTTP --> NET([SearxNG / DuckDuckGo / web pages])
+```
+
+**The tool-calling loop**
+
+```mermaid
+sequenceDiagram
+    participant U as You
+    participant L as Loop (ollama_client)
+    participant M as Model (Ollama/Groq)
+    participant T as Tool
+
+    U->>L: question
+    L->>M: question + tool schemas
+    loop up to 6 rounds
+        M-->>L: tool_calls?  (or final text)
+        alt model asked for a tool
+            L->>T: run tool(args)
+            T-->>L: result
+            L->>M: here is the tool result
+        else model wrote an answer
+            M-->>L: final answer
+        end
+    end
+    L-->>U: final answer + source URLs
 ```
 
 ---
