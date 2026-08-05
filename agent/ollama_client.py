@@ -29,6 +29,7 @@ import ollama
 
 from agent.config import Config, enable_os_truststore, load_config
 from tools.calculator import calculator
+from tools.datetime_tool import current_datetime
 from tools.fetch_page import fetch_page
 from tools.web_search import web_search
 
@@ -150,6 +151,27 @@ def build_tool_schemas() -> list[dict[str, Any]]:
                         },
                     },
                     "required": ["expression"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "current_datetime",
+                "description": (
+                    "Return the current real date and time. Call this before "
+                    "reasoning about 'today', 'this year', 'latest', ages, or any "
+                    "time-relative question, instead of guessing the date."
+                ),
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "utc": {
+                            "type": "boolean",
+                            "description": "Return UTC instead of local time (default false).",
+                        },
+                    },
+                    "required": [],
                 },
             },
         },
@@ -298,6 +320,9 @@ def _execute_tool(name: str, args: dict[str, Any], config: Config) -> str:
         if not expression:
             return "[error] calculator called without an 'expression'."
         return calculator(expression)
+
+    if name == "current_datetime":
+        return current_datetime(utc=bool(args.get("utc", False)))
 
     return f"[error] Unknown tool: {name}"
 
