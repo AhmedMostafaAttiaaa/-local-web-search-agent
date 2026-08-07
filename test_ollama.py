@@ -1,3 +1,14 @@
+"""Helper SCRIPT (not a pytest test) to check Ollama connectivity.
+
+Run it directly to list the models available on your configured OLLAMA_HOST and
+refresh `models.md`:
+
+    python test_ollama.py
+
+NOTE: despite the ``test_`` name, this is not part of the pytest suite. Always
+run tests with ``python -m pytest tests/`` so pytest doesn't import this file and
+hit your Ollama host as a side effect.
+"""
 import os
 
 import ollama
