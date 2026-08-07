@@ -218,6 +218,7 @@ def _print_tool_call(step: int, name: str, args: dict[str, Any]) -> None:
 def _chat_with_status(client: Any, model: str, messages: list, tools: Any, label: str) -> Any:
     """Call the model, showing a live spinner (rich) or a plain line so the
     silent 'model is thinking' gap doesn't look like a freeze."""
+    messages = _ollama_ready_messages(messages)
     if _console is not None:
         # A live spinner; it's cleared automatically before the next print.
         with _console.status(f"[cyan]{label}[/cyan]", spinner="dots"):
@@ -288,6 +289,31 @@ def _coerce_args(args: Any) -> dict[str, Any]:
         except json.JSONDecodeError:
             return {}
     return {}
+
+
+def _ollama_ready_messages(messages: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return messages safe to send to Ollama's client.
+
+    Ollama's Message model requires each tool_call's ``function.arguments`` to be
+    a dict, but a session persisted under the Groq/OpenAI backend stores it as a
+    JSON *string*. Resuming such a session under Ollama would raise a pydantic
+    ValidationError, so coerce any string arguments back to dicts here. Messages
+    without tool_calls pass through untouched.
+    """
+    fixed: list[dict[str, Any]] = []
+    for msg in messages:
+        calls = msg.get("tool_calls") if isinstance(msg, dict) else None
+        if not calls:
+            fixed.append(msg)
+            continue
+        new_calls = []
+        for call in calls:
+            fn = (call.get("function") or {}) if isinstance(call, dict) else {}
+            if isinstance(fn.get("arguments"), str):
+                call = {**call, "function": {**fn, "arguments": _coerce_args(fn["arguments"])}}
+            new_calls.append(call)
+        fixed.append({**msg, "tool_calls": new_calls})
+    return fixed
 
 
 def _extract_sources(web_search_json: str) -> list[dict[str, str]]:

@@ -14,6 +14,7 @@ from agent.ollama_client import (
     _extract_sources,
     _final_text,
     _message_to_dict,
+    _ollama_ready_messages,
     build_tool_schemas,
 )
 
@@ -51,6 +52,33 @@ def test_build_tool_schemas_has_expected_tools():
         "current_datetime",
         "text_stats",
     }
+
+
+def test_ollama_ready_coerces_stringified_tool_args():
+    # A session persisted under the Groq backend stores arguments as a JSON
+    # string; Ollama's client requires a dict. Resuming must not crash.
+    messages = [
+        {"role": "user", "content": "hi"},
+        {
+            "role": "assistant",
+            "content": "",
+            "tool_calls": [
+                {"function": {"name": "web_search", "arguments": '{"query": "x", "num_results": 3}'}}
+            ],
+        },
+    ]
+    fixed = _ollama_ready_messages(messages)
+    args = fixed[1]["tool_calls"][0]["function"]["arguments"]
+    assert args == {"query": "x", "num_results": 3}
+    # Messages without tool_calls are passed through unchanged.
+    assert fixed[0] == messages[0]
+
+
+def test_ollama_ready_leaves_dict_args_untouched():
+    messages = [
+        {"role": "assistant", "tool_calls": [{"function": {"name": "f", "arguments": {"a": 1}}}]}
+    ]
+    assert _ollama_ready_messages(messages)[0]["tool_calls"][0]["function"]["arguments"] == {"a": 1}
 
 
 def test_coerce_args_dict_passthrough():
