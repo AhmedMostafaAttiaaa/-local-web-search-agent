@@ -32,3 +32,9 @@ git_guide.txt
 # Claude Code session transcripts (may capture .env reads — keep out of git)
 *.jsonl
 *.conversation.md
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
