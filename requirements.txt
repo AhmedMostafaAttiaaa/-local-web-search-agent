@@ -8,4 +8,5 @@ rich>=13.0.0           # Nicer CLI output (optional at runtime, code degrades gr
 truststore>=0.9.0      # Verify TLS via the OS trust store (fixes corporate/AV MITM, e.g. Kaspersky)
 streamlit>=1.30        # Optional: the basic web UI (streamlit run streamlit_app.py)
 openai>=1.30           # Groq backend (OpenAI-compatible API) — only needed for backend: groq
-pytest>=8.0             # Test runner (tests/test_tools.py)
+httpx>=0.27            # TLS-verifying HTTP client used for the Groq backend (truststore-aware)
+pytest>=8.0            # Test runner (tests/)
