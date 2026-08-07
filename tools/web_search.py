@@ -9,6 +9,13 @@ Every function returns a list of uniformly-shaped dicts::
 
 The module is intentionally free of any agent/LLM logic so the search backend
 can be swapped without touching the tool-calling loop.
+
+Example::
+
+    from tools.web_search import web_search
+    hits = web_search("usd to egp rate today", num_results=3)
+    for h in hits:
+        print(h["title"], h["url"])
 """
 from __future__ import annotations
 
