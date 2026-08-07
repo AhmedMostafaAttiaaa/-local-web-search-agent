@@ -7,6 +7,7 @@ model **search the live internet** instead of relying only on its training data.
 -  **Fallback:** DuckDuckGo HTML scrape (no API key) if SearxNG is unreachable.
 -  **Page-fetch tool:** downloads a URL and extracts clean readable text so the model can read exact details (like a price) beyond the snippet.
 -  **Native Ollama tool-calling:** the model itself decides when to call `web_search` and/or `fetch_page`, across multiple turns.
+-  **Pluggable backend:** run fully local with Ollama, or switch to the [Groq](https://console.groq.com) cloud API with `--backend groq` — same tools, no local model needed.
 -  **CLI + interactive chat** modes, configurable via `config.yaml` / `.env`.
 
 ```
